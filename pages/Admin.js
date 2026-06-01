@@ -57,38 +57,45 @@ async function renderUsers() {
 function showInviteModal() {
   modal(`
     <div class="modal-title">${t('inviteUser')}</div>
+    <div style="background:var(--blue-bg);border:1px solid var(--border);border-radius:var(--r-sm);padding:10px 12px;font-size:12px;color:var(--blue);margin-bottom:14px;line-height:1.5">
+      Inviting users requires your Supabase <strong>service role key</strong>.<br>
+      Find it: Supabase dashboard → Project Settings → API → <em>service_role secret</em>
+    </div>
+    <div class="field"><label>Service role key</label><input type="password" id="inv-svckey" placeholder="eyJ... (service_role key, not anon key)"></div>
     <div class="field"><label>${t('displayName')}</label><input type="text" id="inv-name" placeholder="First Last"></div>
     <div class="field"><label>${t('username')}</label><input type="text" id="inv-user" placeholder="firstname.lastname" autocapitalize="none"></div>
     <div class="field"><label>${t('role')}</label>
       <select id="inv-role"><option value="operator">${t('operator')}</option><option value="supervisor">${t('supervisor')}</option></select>
     </div>
-    <div class="field-hint" style="margin-bottom:12px">Username will log in as <strong>username@caremed.internal</strong></div>
+    <div class="field-hint" style="margin-bottom:12px">User will log in as <strong>username@caremed.internal</strong></div>
     <div class="modal-actions">
       <button class="btn btn-secondary" onclick="window._closeModal()">${t('cancel')}</button>
       <button class="btn btn-primary" onclick="window._sendInvite()">${t('sendInvite')}</button>
     </div>`)
   window._closeModal = closeModal
   window._sendInvite = async () => {
-    const name = document.getElementById('inv-name').value.trim()
-    const user = document.getElementById('inv-user').value.trim().toLowerCase().replace(/[^a-z0-9.]/g, '')
-    const role = document.getElementById('inv-role').value
+    const name   = document.getElementById('inv-name').value.trim()
+    const user   = document.getElementById('inv-user').value.trim().toLowerCase().replace(/[^a-z0-9.]/g, '')
+    const role   = document.getElementById('inv-role').value
+    const svcKey = document.getElementById('inv-svckey').value.trim()
     if (!name || !user) { toast(t('fillRequired')); return }
+    if (!svcKey) { toast('Service role key required — see instructions above'); return }
     const email = `${user}@caremed.internal`
     try {
       const res = await fetch(`${window.__SB_URL__}/auth/v1/invite`, {
         method: 'POST',
         headers: {
-          'apikey': window.__SB_KEY__,
-          'Authorization': `Bearer ${window.__SB_KEY__}`,
+          'apikey': svcKey,
+          'Authorization': `Bearer ${svcKey}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ email, data: { display_name: name, role, username: user } }),
       })
-      if (!res.ok) { const err = await res.json(); throw new Error(err.msg || 'Invite failed') }
+      if (!res.ok) { const err = await res.json(); throw new Error(err.msg || err.message || 'Invite failed') }
       closeModal()
-      toast(t('inviteSent'))
+      toast(`✓ Invite sent to ${email}`)
       renderAdmin()
-    } catch(e) { toast(e.message) }
+    } catch(e) { toast('Error: ' + e.message) }
   }
 }
 

@@ -81,7 +81,17 @@ export async function renderDashboard() {
         <span class="badge badge-pending">${t('scheduled')}</span>
       </div>`).join('')
     }
-  } catch(e) { console.error(e) }
+  } catch(e) {
+    console.error('Dashboard error:', e)
+    const liveEl = document.getElementById('ds-live')
+    if (liveEl && liveEl.innerHTML.includes('Loading')) {
+      liveEl.innerHTML = `<div class="empty-state"><div class="empty-icon">⚠️</div>Could not load builds — ${e.message}</div>`
+    }
+    const todayEl = document.getElementById('ds-today')
+    if (todayEl && !todayEl.innerHTML) {
+      todayEl.innerHTML = `<div class="empty-state" style="padding:12px">Could not load schedule</div>`
+    }
+  }
 }
 
 function buildCard(j) {
