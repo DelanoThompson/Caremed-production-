@@ -76,14 +76,7 @@ export function renderLogin(onSuccess) {
       await State.loadProfile()
       onSuccess()
     } catch(e) {
-      const msg = e?.message || ''
-      if (msg.toLowerCase().includes('email not confirmed')) {
-        errEl.textContent = 'Email not confirmed — ask your supervisor to confirm your account in Supabase.'
-      } else if (msg.toLowerCase().includes('invalid login') || msg.toLowerCase().includes('invalid credentials')) {
-        errEl.textContent = 'Incorrect username or password. Try your full email (e.g. name@caremed-group.com).'
-      } else {
-        errEl.textContent = msg || t('invalidCredentials')
-      }
+      errEl.textContent = e?.message || 'Sign in failed — unknown error'
       errEl.classList.add('show')
       btn.disabled = false
       btn.textContent = t('signIn')
