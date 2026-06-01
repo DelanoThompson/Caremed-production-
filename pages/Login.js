@@ -24,7 +24,7 @@ export function renderLogin(onSuccess) {
         <div class="login-error" id="login-error"></div>
         <div class="field">
           <label>${t('username')}</label>
-          <input type="text" id="login-user" placeholder="your.name" autocomplete="username" autocapitalize="none" spellcheck="false">
+          <input type="text" id="login-user" placeholder="name@caremed-group.com" autocomplete="username" autocapitalize="none" spellcheck="false">
         </div>
         <div class="field">
           <label>${t('password')}</label>
@@ -53,7 +53,14 @@ export function renderLogin(onSuccess) {
       await State.loadProfile()
       onSuccess()
     } catch(e) {
-      errEl.textContent = t('invalidCredentials')
+      const msg = e?.message || ''
+      if (msg.toLowerCase().includes('email not confirmed')) {
+        errEl.textContent = 'Email not confirmed — ask your supervisor to confirm your account in Supabase.'
+      } else if (msg.toLowerCase().includes('invalid login') || msg.toLowerCase().includes('invalid credentials')) {
+        errEl.textContent = 'Incorrect username or password. Try your full email (e.g. name@caremed-group.com).'
+      } else {
+        errEl.textContent = msg || t('invalidCredentials')
+      }
       errEl.classList.add('show')
       btn.disabled = false
       btn.textContent = t('signIn')
