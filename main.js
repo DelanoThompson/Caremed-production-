@@ -5,15 +5,33 @@ import { renderLogin } from './pages/Login.js'
 import { renderApp } from './pages/App.js'
 import { i18n } from './i18n/index.js'
 
-async function boot() {
-  // Handle password recovery redirect — Supabase puts #access_token=...&type=recovery in the URL
-  const hash   = window.location.hash.substring(1)
-  const params = new URLSearchParams(hash)
-  if (params.get('type') === 'recovery') {
+let _booted = false
+
+// Set up auth listener FIRST — before boot — so PASSWORD_RECOVERY is caught immediately
+Auth.onAuthChange(async (event, session) => {
+  if (event === 'PASSWORD_RECOVERY') {
+    _booted = true
     showSetPasswordScreen()
     return
   }
+  if (event === 'SIGNED_OUT') {
+    State.user = null; State.profile = null
+    renderLogin(onLoginSuccess)
+    return
+  }
+  if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session?.user) {
+    if (_booted) return   // already handled by boot()
+    State.user = session.user
+    await State.loadProfile()
+  }
+})
 
+async function boot() {
+  // Small delay so the auth listener above can fire first if this is a recovery redirect
+  await new Promise(r => setTimeout(r, 100))
+  if (_booted) return
+
+  _booted = true
   try {
     const session = await Auth.getSession()
     if (session?.user) {
@@ -29,6 +47,10 @@ async function boot() {
     }
   } catch(e) {}
   renderLogin(onLoginSuccess)
+}
+
+async function onLoginSuccess() {
+  renderApp()
 }
 
 function showSetPasswordScreen() {
@@ -85,7 +107,6 @@ function showSetPasswordScreen() {
       const { data, error } = await getClient().auth.updateUser({ password: pw1 })
       if (error) throw error
 
-      // Clear the hash so we don't re-enter recovery mode on refresh
       history.replaceState(null, '', window.location.pathname)
 
       msg.style.display = 'block'
@@ -94,7 +115,6 @@ function showSetPasswordScreen() {
       msg.style.border = '1px solid var(--green-light)'
       msg.textContent = '✓ Password updated! Signing you in...'
 
-      // Session is already set by Supabase after updateUser — go straight to the app
       setTimeout(async () => {
         State.user = data.user
         await State.loadProfile()
@@ -107,27 +127,12 @@ function showSetPasswordScreen() {
     }
   }
 
-  // Allow Enter key on confirm field
   setTimeout(() => {
     document.getElementById('setp-pw2')?.addEventListener('keydown', e => {
       if (e.key === 'Enter') window._setNewPassword()
     })
   }, 100)
 }
-
-async function onLoginSuccess() {
-  renderApp()
-}
-
-Auth.onAuthChange(async (event, session) => {
-  if (event === 'SIGNED_OUT') {
-    State.user = null; State.profile = null
-    renderLogin(onLoginSuccess)
-  } else if (event === 'SIGNED_IN' && session) {
-    State.user = session.user
-    await State.loadProfile()
-  }
-})
 
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('sw.js').catch(() => {})
