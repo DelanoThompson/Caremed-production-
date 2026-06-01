@@ -134,11 +134,41 @@ function showSetPasswordScreen() {
   }, 100)
 }
 
+// Unregister any stale service workers and re-register fresh
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('sw.js').catch(() => {})
+  navigator.serviceWorker.getRegistrations().then(regs => {
+    regs.forEach(r => r.unregister())
+  }).then(() => {
+    navigator.serviceWorker.register('sw.js').catch(() => {})
+  })
+}
+
+// Global error handler — shows error instead of blank screen
+window.onerror = (msg, src, line, col, err) => {
+  const app = document.getElementById('app')
+  if (app && !app.innerHTML.trim()) {
+    app.innerHTML = `<div style="padding:32px;font-family:sans-serif;background:#fdeaea;min-height:100vh">
+      <div style="max-width:600px;margin:0 auto">
+        <h2 style="color:#7a1f1f;margin-bottom:12px">App error</h2>
+        <p style="color:#333;margin-bottom:8px">${msg}</p>
+        <p style="color:#888;font-size:13px">${src} line ${line}</p>
+        <button onclick="location.reload()" style="margin-top:16px;padding:10px 20px;background:#3A3A7F;color:#fff;border:none;border-radius:8px;font-size:14px;cursor:pointer">Reload</button>
+      </div>
+    </div>`
+  }
 }
 
 window.addEventListener('online',  () => { const b = document.getElementById('offline-bar'); if (b) b.style.display = 'none' })
 window.addEventListener('offline', () => { const b = document.getElementById('offline-bar'); if (b) b.style.display = 'block' })
 
-boot()
+boot().catch(err => {
+  console.error('Boot failed:', err)
+  const app = document.getElementById('app')
+  if (app) app.innerHTML = `<div style="padding:32px;font-family:sans-serif;background:#fdeaea;min-height:100vh">
+    <div style="max-width:600px;margin:0 auto">
+      <h2 style="color:#7a1f1f;margin-bottom:12px">Failed to start</h2>
+      <p style="color:#333;margin-bottom:8px">${err?.message || 'Unknown error'}</p>
+      <button onclick="location.reload()" style="margin-top:16px;padding:10px 20px;background:#3A3A7F;color:#fff;border:none;border-radius:8px;font-size:14px;cursor:pointer">Reload</button>
+    </div>
+  </div>`
+})
