@@ -40,7 +40,7 @@ export async function renderDashboard() {
         tEl.innerHTML = `<div class="section-title mt">${t('transferRequest')}</div>` +
           transfers.map(tr => `<div class="transfer-card">
             <div class="transfer-title">${t('transferRequest')}: ${tr.job?.work_order || '—'}</div>
-            <div class="transfer-meta">${tr.requester?.display_name} wants to take this job · ${tr.job?.model || ''}</div>
+            <div class="transfer-meta">Operator wants to take this job · ${tr.job?.model || ''}</div>
             <div class="transfer-actions">
               <button class="btn btn-success sm" onclick="window._approveTransfer('${tr.id}','${tr.job_id}','${tr.requester_id}')">✓ ${t('approve')}</button>
               <button class="btn btn-danger sm"  onclick="window._declineTransfer('${tr.id}')">✗ ${t('decline')}</button>
