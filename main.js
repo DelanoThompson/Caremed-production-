@@ -134,13 +134,9 @@ function showSetPasswordScreen() {
   }, 100)
 }
 
-// Unregister any stale service workers and re-register fresh
+// Register the self-destructing SW to clear any cached versions
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.getRegistrations().then(regs => {
-    regs.forEach(r => r.unregister())
-  }).then(() => {
-    navigator.serviceWorker.register('sw.js').catch(() => {})
-  })
+  navigator.serviceWorker.register('sw.js').catch(() => {})
 }
 
 // Global error handler — shows error instead of blank screen
