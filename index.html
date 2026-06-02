@@ -49,6 +49,18 @@
   };
 </script>
 <script src="js/supabase.min.js"></script>
-<script type="module" src="main.js?v=6"></script>
+<script type="module">
+  function showErr(msg) {
+    document.getElementById('app').innerHTML =
+      '<div style="padding:24px;background:#1a1a2e;min-height:100vh;color:#fff;font-family:monospace">' +
+      '<div style="font-size:15px;font-weight:bold;color:#f87171;margin-bottom:12px">Load error</div>' +
+      '<div style="font-size:12px;line-height:1.6;color:#fca5a5;word-break:break-all">' + msg + '</div>' +
+      '<button onclick="location.reload(true)" style="margin-top:16px;padding:10px 20px;background:#3A3A7F;color:#fff;border:none;border-radius:8px;font-size:14px;cursor:pointer">Reload</button>' +
+      '</div>';
+  }
+  import('./main.js?v=7').catch(function(e) {
+    showErr('Module failed: ' + (e && e.message ? e.message : String(e)));
+  });
+</script>
 </body>
 </html>
