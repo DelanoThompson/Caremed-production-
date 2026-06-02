@@ -1,4 +1,4 @@
-const CACHE  = 'caremed-pro-v2'
+const CACHE  = 'caremed-pro-v3'
 const ASSETS = ['/', '/index.html', '/manifest.json', '/css/app.css', '/main.js']
 
 self.addEventListener('install', e => {
