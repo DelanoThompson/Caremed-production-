@@ -22,17 +22,26 @@
 <div id="toast-container"></div>
 <div id="modal-container"></div>
 <script>
-  // Force full reload if page is restored from Android bfcache
+  // Watchdog: if #app is still empty after 4s, force a hard reload
+  setTimeout(function() {
+    var app = document.getElementById('app');
+    if (app && !app.innerHTML.trim()) {
+      window.location.reload(true);
+    }
+  }, 4000);
+
+  // Force reload if restored from bfcache (Android back/forward cache)
   window.addEventListener('pageshow', function(e) {
-    if (e.persisted) { window.location.reload(); }
+    if (e.persisted) window.location.reload(true);
   });
-  // Reload if app resumes after being hidden for more than 10 minutes
-  let _hiddenAt = null;
+
+  // Reload if app comes back to foreground after 30+ minutes in background
+  var _hiddenAt = null;
   document.addEventListener('visibilitychange', function() {
     if (document.hidden) {
       _hiddenAt = Date.now();
-    } else if (_hiddenAt && (Date.now() - _hiddenAt) > 600000) {
-      window.location.reload();
+    } else if (_hiddenAt && (Date.now() - _hiddenAt) > 1800000) {
+      window.location.reload(true);
     }
   });
 </script>
