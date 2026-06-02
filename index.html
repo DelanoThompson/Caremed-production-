@@ -4,6 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="theme-color" content="#3A3A7F">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Caremed">
@@ -12,12 +15,27 @@
 <title>Caremed Production</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/app.css">
+<link rel="stylesheet" href="css/app.css?v=3">
 </head>
 <body>
 <div id="app"></div>
 <div id="toast-container"></div>
 <div id="modal-container"></div>
+<script>
+  // Force full reload if page is restored from Android bfcache
+  window.addEventListener('pageshow', function(e) {
+    if (e.persisted) { window.location.reload(); }
+  });
+  // Reload if app resumes after being hidden for more than 10 minutes
+  let _hiddenAt = null;
+  document.addEventListener('visibilitychange', function() {
+    if (document.hidden) {
+      _hiddenAt = Date.now();
+    } else if (_hiddenAt && (Date.now() - _hiddenAt) > 600000) {
+      window.location.reload();
+    }
+  });
+</script>
 <script type="module" src="main.js?v=3"></script>
 </body>
 </html>
