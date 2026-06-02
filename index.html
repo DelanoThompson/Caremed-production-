@@ -29,7 +29,26 @@
 </div>
 <div id="toast-container"></div>
 <div id="modal-container"></div>
+<script>
+  window.onerror = function(msg, src, line) {
+    document.getElementById('app').innerHTML =
+      '<div style="padding:24px;background:#1a1a2e;min-height:100vh;color:#fff;font-family:monospace">' +
+      '<div style="font-size:16px;font-weight:bold;color:#f87171;margin-bottom:12px">JS Error</div>' +
+      '<div style="font-size:13px;line-height:1.6;color:#fca5a5">' + msg + '</div>' +
+      '<div style="font-size:11px;color:#888;margin-top:8px">' + src + ' line ' + line + '</div>' +
+      '<button onclick="location.reload()" style="margin-top:16px;padding:10px 20px;background:#3A3A7F;color:#fff;border:none;border-radius:8px;font-size:14px;cursor:pointer">Reload</button>' +
+      '</div>';
+  };
+  window.onunhandledrejection = function(e) {
+    document.getElementById('app').innerHTML =
+      '<div style="padding:24px;background:#1a1a2e;min-height:100vh;color:#fff;font-family:monospace">' +
+      '<div style="font-size:16px;font-weight:bold;color:#f87171;margin-bottom:12px">Unhandled Error</div>' +
+      '<div style="font-size:13px;line-height:1.6;color:#fca5a5">' + (e.reason?.message || String(e.reason)) + '</div>' +
+      '<button onclick="location.reload()" style="margin-top:16px;padding:10px 20px;background:#3A3A7F;color:#fff;border:none;border-radius:8px;font-size:14px;cursor:pointer">Reload</button>' +
+      '</div>';
+  };
+</script>
 <script src="js/supabase.min.js"></script>
-<script type="module" src="main.js?v=5"></script>
+<script type="module" src="main.js?v=6"></script>
 </body>
 </html>
