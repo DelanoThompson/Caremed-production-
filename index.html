@@ -22,26 +22,32 @@
 <div id="toast-container"></div>
 <div id="modal-container"></div>
 <script>
-  // Watchdog: if #app is still empty after 4s, force a hard reload
-  setTimeout(function() {
-    var app = document.getElementById('app');
-    if (app && !app.innerHTML.trim()) {
-      window.location.reload(true);
-    }
-  }, 4000);
+  // Watchdog: if #app is still empty after 5s on any load, force reload
+  function _watchdog() {
+    setTimeout(function() {
+      var app = document.getElementById('app');
+      if (app && !app.innerHTML.trim()) {
+        window.location.reload(true);
+      }
+    }, 5000);
+  }
+  _watchdog();
 
-  // Force reload if restored from bfcache (Android back/forward cache)
+  // Force reload if restored from bfcache
   window.addEventListener('pageshow', function(e) {
-    if (e.persisted) window.location.reload(true);
+    if (e.persisted) { window.location.reload(true); }
   });
 
-  // Reload if app comes back to foreground after 30+ minutes in background
-  var _hiddenAt = null;
+  // On EVERY resume from background: check if app is blank and reload
   document.addEventListener('visibilitychange', function() {
-    if (document.hidden) {
-      _hiddenAt = Date.now();
-    } else if (_hiddenAt && (Date.now() - _hiddenAt) > 1800000) {
-      window.location.reload(true);
+    if (!document.hidden) {
+      var app = document.getElementById('app');
+      if (app && !app.innerHTML.trim()) {
+        window.location.reload(true);
+      } else {
+        // App has content but re-run watchdog in case it froze mid-render
+        _watchdog();
+      }
     }
   });
 </script>
