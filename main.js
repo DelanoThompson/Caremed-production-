@@ -134,9 +134,9 @@ function showSetPasswordScreen() {
   }, 100)
 }
 
-// Register service worker for app shell caching
+// Unregister any service workers — they cause caching issues on Android
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('/sw.js').catch(() => {})
+  navigator.serviceWorker.getRegistrations().then(r => r.forEach(sw => sw.unregister()))
 }
 
 // Global error handler — shows error instead of blank screen
