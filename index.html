@@ -18,40 +18,18 @@
 <link rel="stylesheet" href="css/app.css?v=3">
 </head>
 <body>
-<div id="app"></div>
+<div id="app">
+  <div style="position:fixed;inset:0;background:linear-gradient(135deg,#3A3A7F,#2a2a6f);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px">
+    <div style="text-align:center">
+      <span style="font-size:32px;font-weight:800;color:#fff;letter-spacing:-1px">Care</span><span style="font-size:32px;font-weight:800;color:rgba(255,255,255,.45);letter-spacing:-1px">med</span>
+    </div>
+    <div style="width:36px;height:36px;border:3px solid rgba(255,255,255,.2);border-top-color:#fff;border-radius:50%;animation:spin 0.8s linear infinite"></div>
+    <style>@keyframes spin{to{transform:rotate(360deg)}}</style>
+  </div>
+</div>
 <div id="toast-container"></div>
 <div id="modal-container"></div>
-<script>
-  // Watchdog: if #app is still empty after 5s on any load, force reload
-  function _watchdog() {
-    setTimeout(function() {
-      var app = document.getElementById('app');
-      if (app && !app.innerHTML.trim()) {
-        window.location.reload(true);
-      }
-    }, 5000);
-  }
-  _watchdog();
-
-  // Force reload if restored from bfcache
-  window.addEventListener('pageshow', function(e) {
-    if (e.persisted) { window.location.reload(true); }
-  });
-
-  // On EVERY resume from background: check if app is blank and reload
-  document.addEventListener('visibilitychange', function() {
-    if (!document.hidden) {
-      var app = document.getElementById('app');
-      if (app && !app.innerHTML.trim()) {
-        window.location.reload(true);
-      } else {
-        // App has content but re-run watchdog in case it froze mid-render
-        _watchdog();
-      }
-    }
-  });
-</script>
 <script src="js/supabase.min.js"></script>
-<script type="module" src="main.js?v=4"></script>
+<script type="module" src="main.js?v=5"></script>
 </body>
 </html>
