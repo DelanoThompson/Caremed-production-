@@ -1,5 +1,6 @@
 // pages/Admin.js
 import { Profiles, Products } from '../lib/db.js'
+import { renderStockAdmin } from './StockAdmin.js'
 import { State } from '../lib/state.js'
 import { toast, modal, closeModal } from '../lib/utils.js'
 import { i18n } from '../i18n/index.js'
@@ -12,15 +13,17 @@ export function renderAdmin() {
   const el = document.getElementById('tab-admin')
   if (!el || !State.isSupervisor) return
   el.innerHTML = `<div class="page-pad">
-    <div style="display:flex;gap:8px;margin-bottom:16px">
-      <button class="btn ${adminTab==='users'?'btn-primary':'btn-secondary'} sm" onclick="window._adminTab('users')">${t('users')}</button>
+    <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">
+      <button class="btn ${adminTab==='users'   ?'btn-primary':'btn-secondary'} sm" onclick="window._adminTab('users')">${t('users')}</button>
       <button class="btn ${adminTab==='products'?'btn-primary':'btn-secondary'} sm" onclick="window._adminTab('products')">${t('products')}</button>
+      <button class="btn ${adminTab==='stock'   ?'btn-primary':'btn-secondary'} sm" onclick="window._adminTab('stock')">📦 Stock catalogue</button>
     </div>
     <div id="admin-content"></div>
   </div>`
   window._adminTab = (tab) => { adminTab = tab; renderAdmin() }
-  if (adminTab === 'users') renderUsers()
-  else renderProducts()
+  if      (adminTab === 'users')    renderUsers()
+  else if (adminTab === 'products') renderProducts()
+  else if (adminTab === 'stock')    renderStockAdmin(document.getElementById('admin-content'))
 }
 
 async function renderUsers() {

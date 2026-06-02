@@ -4,6 +4,7 @@ import { Auth } from '../lib/db.js'
 import { toast, closeModal } from '../lib/utils.js'
 import { i18n } from '../i18n/index.js'
 import { renderDashboard } from './Dashboard.js'
+import { openStockRequest } from './StockRequest.js'
 import { renderScheduler } from './Scheduler.js'
 import { renderBuilds } from './Builds.js'
 import { renderRecords } from './Records.js'
@@ -51,13 +52,23 @@ export function renderApp() {
     <div id="build-screen"     class="screen slide-up"></div>
     <div id="slideshow-screen" class="screen slide-up" style="display:flex;flex-direction:column;overflow:hidden"></div>
     <div id="form-screen"      class="screen slide-up"></div>
-    <div id="product-screen"   class="screen slide-left"></div>`
+    <div id="product-screen"   class="screen slide-left"></div>
+
+    <!-- Floating scan button -->
+    <button onclick="window._openStockRequest()" title="Request stock"
+      style="position:fixed;bottom:24px;right:24px;width:52px;height:52px;border-radius:50%;background:var(--brand);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:22px;box-shadow:0 4px 16px rgba(58,58,127,.4);z-index:100">
+      📦
+    </button>`
 
   window.addEventListener('online',  () => { document.getElementById('offline-bar').style.display = 'none'; AppShell.refresh() })
   window.addEventListener('offline', () => { document.getElementById('offline-bar').style.display = 'block' })
   if (!navigator.onLine) document.getElementById('offline-bar').style.display = 'block'
 
   State.setupRealtime(() => AppShell.refresh())
+
+  window._openStockRequest = () => openStockRequest()
+  // Restore purchase email setting
+  window._srPurchaseEmail = localStorage.getItem('cm_purchase_email') || 'purchasing@caremed-group.com'
 
   renderDashboard()
 
