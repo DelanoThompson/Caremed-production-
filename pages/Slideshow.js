@@ -11,28 +11,56 @@ export function openSlideshow(job) {
   const stages    = job.product?.stages || []
   const completed = [...(job.stages_completed || [])]
   let   current   = job.current_stage ?? completed.length
-
-  // If all done, show last stage
   if (current >= stages.length) current = stages.length - 1
 
-  const torqueData  = {}   // stageIdx -> { boltRef -> value }
-  const checkData   = {}   // stageIdx -> { itemIdx -> bool }
-  let   stageStart  = Date.now()
+  const torqueData = {}
+  const checkData  = {}
+  let   stageStart = Date.now()
   let   timerHandle = null
 
-  function render() {
-    const stage    = stages[current]
-    if (!stage) return
-    const isDone   = completed.includes(current)
-    const isLast   = current === stages.length - 1
-    const pct      = Math.round(completed.length / stages.length * 100)
-    const bolts    = stage.bolts  || []
-    const items    = stage.items  || []
-    const instrs   = stage.instructions || []
-    const isCheck  = !!stage.isCheckpoint
+  function canAdvance() {
+    const stage = stages[current]
+    if (!stage) return false
+    if (completed.includes(current)) return true          // already done — always allow
+    const bolts    = stage.bolts || []
+    const items    = stage.items || []
+    if (bolts.length === 0 && items.length === 0) return true  // no requirements
+    const td = torqueData[current] || {}
+    const cd = checkData[current]  || {}
+    const boltsOk = bolts.every(b => td[b.ref] !== undefined && td[b.ref] !== '' && +td[b.ref] > 0)
+    const itemsOk = items.every((_, i) => cd[i])
+    return boltsOk && itemsOk
+  }
 
-    const td = torqueData[current] = torqueData[current] || {}
-    const cd = checkData[current]  = checkData[current]  || {}
+  function updateNextBtn() {
+    const btn = document.getElementById('ss-next-btn')
+    if (!btn) return
+    const ready = canAdvance()
+    btn.removeAttribute('disabled')           // always clickable
+    if (ready) {
+      btn.classList.add('ready')
+      btn.classList.remove('ss-not-ready')
+    } else {
+      btn.classList.remove('ready')
+      btn.classList.add('ss-not-ready')
+    }
+  }
+
+  function render() {
+    const stage   = stages[current]
+    if (!stage) return
+    const isDone  = completed.includes(current)
+    const isLast  = current === stages.length - 1
+    const pct     = Math.round(completed.length / stages.length * 100)
+    const bolts   = stage.bolts  || []
+    const items   = stage.items  || []
+    const instrs  = stage.instructions || []
+    const isCheck = !!stage.isCheckpoint
+
+    torqueData[current] = torqueData[current] || {}
+    checkData[current]  = checkData[current]  || {}
+    const td = torqueData[current]
+    const cd = checkData[current]
 
     screen.innerHTML = `
       <div class="ss-topbar">
@@ -64,28 +92,34 @@ export function openSlideshow(job) {
         </div>` : ''}
 
         ${bolts.length ? `
-        <div class="ss-sec-title">Torque checks</div>
+        <div class="ss-sec-title">Torque checks — fill all values to unlock next stage</div>
         <div class="ss-bolt-list">
-          ${bolts.map((b, bi) => `<div class="ss-bolt-row">
-            <div class="ss-bolt-info">
-              <div class="ss-bolt-ref">${b.ref}</div>
-              <div class="ss-bolt-desc">${b.desc}</div>
-              <div class="ss-bolt-fix">${b.fix}</div>
-            </div>
-            <div class="ss-bolt-right">
-              <div class="ss-bolt-spec">Spec: ${b.spec} Nm</div>
-              <input class="ss-t-in" type="number" id="t-${bi}" placeholder="${b.spec}"
-                value="${td[b.ref]||''}" min="0" max="999" step="1"
-                oninput="window._ssTorque('${b.ref}',${bi},${b.spec},this.value)">
-              <div class="ss-result-dot ${td[b.ref]?(+td[b.ref]>=b.spec*0.9&&+td[b.ref]<=b.spec*1.1?'dot-pass':'dot-fail'):''}" id="rd-${bi}">
-                ${td[b.ref]?(+td[b.ref]>=b.spec*0.9&&+td[b.ref]<=b.spec*1.1?'✓':'✗'):''}
+          ${bolts.map((b, bi) => {
+            const val = td[b.ref] || ''
+            const ok  = val && +val >= b.spec*0.9 && +val <= b.spec*1.1
+            const fail = val && !ok
+            return `<div class="ss-bolt-row">
+              <div class="ss-bolt-info">
+                <div class="ss-bolt-ref">${b.ref}</div>
+                <div class="ss-bolt-desc">${b.desc}</div>
+                <div class="ss-bolt-fix">${b.fix}</div>
               </div>
-            </div>
-          </div>`).join('')}
+              <div class="ss-bolt-right">
+                <div class="ss-bolt-spec">Spec: ${b.spec} Nm</div>
+                <input class="ss-t-in ${ok?'pass':fail?'fail':''}" type="number" id="t-${bi}"
+                  inputmode="decimal" placeholder="${b.spec}" value="${val}"
+                  min="0" max="999" step="0.1"
+                  oninput="window._ssTorque('${b.ref}',${bi},${b.spec},this.value)">
+                <div class="ss-result-dot ${ok?'dot-pass':fail?'dot-fail':''}" id="rd-${bi}">
+                  ${ok?'✓':fail?'✗':''}
+                </div>
+              </div>
+            </div>`
+          }).join('')}
         </div>` : ''}
 
         ${items.length ? `
-        <div class="ss-sec-title">Visual checks</div>
+        <div class="ss-sec-title">Visual checks — tick all items to unlock next stage</div>
         <div class="ss-check-list">
           ${items.map((item, ii) => `<div class="ss-chk-item ${cd[ii]?'checked':''}" onclick="window._ssCheck(${ii})">
             <input type="checkbox" id="chk-${ii}" ${cd[ii]?'checked':''} onchange="window._ssCheck(${ii})">
@@ -98,39 +132,13 @@ export function openSlideshow(job) {
 
       <div class="ss-footer">
         <div class="ss-timer" id="ss-timer">0:00</div>
-        <button class="ss-next-btn ${canAdvance()?'ready':''}" id="ss-next-btn"
-          onclick="window._ssNext()" ${canAdvance()?'':'disabled'}>
+        <button class="ss-next-btn" id="ss-next-btn" onclick="window._ssNext()">
           ${isDone ? (isLast ? 'All done ✓' : 'Next stage →') : (isLast ? 'Complete build' : 'Mark complete & next →')}
         </button>
       </div>`
 
     startTimer()
     updateNextBtn()
-  }
-
-  function canAdvance() {
-    const stage = stages[current]
-    if (!stage) return false
-    const bolts = stage.bolts || []
-    const items = stage.items || []
-    const td    = torqueData[current] || {}
-    const cd    = checkData[current]  || {}
-    const boltsOk = bolts.every(b => td[b.ref] && +td[b.ref] > 0)
-    const itemsOk = items.every((_, i) => cd[i])
-    return boltsOk && itemsOk
-  }
-
-  function updateNextBtn() {
-    const btn = document.getElementById('ss-next-btn')
-    if (!btn) return
-    if (canAdvance()) { btn.classList.add('ready'); btn.disabled = false }
-    else              { btn.classList.remove('ready'); btn.disabled = true }
-    // Always allow advance if stage has no bolts or items
-    const stage = stages[current]
-    if (!stage) return
-    if ((stage.bolts||[]).length === 0 && (stage.items||[]).length === 0) {
-      btn.classList.add('ready'); btn.disabled = false
-    }
   }
 
   function startTimer() {
@@ -147,28 +155,44 @@ export function openSlideshow(job) {
   window._ssTorque = (ref, bi, spec, val) => {
     torqueData[current][ref] = val
     const dot = document.getElementById(`rd-${bi}`)
-    if (dot && val) {
-      const n = +val
+    const inp = document.getElementById(`t-${bi}`)
+    if (val) {
+      const n  = +val
       const ok = n >= spec*0.9 && n <= spec*1.1
-      dot.className = `ss-result-dot ${ok?'dot-pass':'dot-fail'}`
-      dot.textContent = ok ? '✓' : '✗'
-      document.getElementById(`t-${bi}`)?.classList.toggle('pass', ok)
-      document.getElementById(`t-${bi}`)?.classList.toggle('fail', !ok)
+      if (dot) { dot.className = `ss-result-dot ${ok?'dot-pass':'dot-fail'}`; dot.textContent = ok?'✓':'✗' }
+      if (inp) { inp.classList.toggle('pass', ok); inp.classList.toggle('fail', !ok) }
+    } else {
+      if (dot) { dot.className = 'ss-result-dot'; dot.textContent = '' }
+      if (inp) { inp.classList.remove('pass','fail') }
     }
     updateNextBtn()
   }
 
   window._ssCheck = (ii) => {
-    const cd = checkData[current] = checkData[current] || {}
-    cd[ii] = !cd[ii]
+    checkData[current][ii] = !checkData[current][ii]
     const chk  = document.getElementById(`chk-${ii}`)
     const item = chk?.closest('.ss-chk-item')
-    if (chk)  chk.checked = cd[ii]
-    if (item) item.classList.toggle('checked', cd[ii])
+    if (chk)  chk.checked = checkData[current][ii]
+    if (item) item.classList.toggle('checked', checkData[current][ii])
     updateNextBtn()
   }
 
   window._ssNext = async () => {
+    if (!canAdvance()) {
+      const stage = stages[current]
+      const bolts = stage?.bolts || []
+      const items = stage?.items || []
+      const td = torqueData[current] || {}
+      const cd = checkData[current]  || {}
+      const missingBolts = bolts.filter(b => !td[b.ref] || +td[b.ref] <= 0)
+      const missingItems = items.filter((_, i) => !cd[i])
+      let msg = 'Please complete all checks first:\n'
+      if (missingBolts.length) msg += `\n• ${missingBolts.length} torque value(s) missing`
+      if (missingItems.length) msg += `\n• ${missingItems.length} visual check(s) not ticked`
+      toast(msg)
+      return
+    }
+
     clearInterval(timerHandle)
     const elapsed = Math.round((Date.now() - stageStart) / 1000)
 
@@ -194,7 +218,6 @@ export function openSlideshow(job) {
       AppShell.closeScreen('slideshow-screen')
       return
     }
-
     current++
     render()
   }
