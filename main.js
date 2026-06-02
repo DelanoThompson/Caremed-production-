@@ -134,9 +134,9 @@ function showSetPasswordScreen() {
   }, 100)
 }
 
-// Register the self-destructing SW to clear any cached versions
+// Register service worker for app shell caching
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('sw.js').catch(() => {})
+  navigator.serviceWorker.register('/sw.js').catch(() => {})
 }
 
 // Global error handler — shows error instead of blank screen
