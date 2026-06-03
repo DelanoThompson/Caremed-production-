@@ -1,6 +1,6 @@
 {
   "scripts": {
-    "build": "esbuild main.js --bundle --outfile=app.bundle.js --format=iife --platform=browser --target=chrome80"
+    "build": "esbuild main.js --bundle --outfile=dist/app.bundle.js --format=iife --platform=browser --target=chrome80 && node build-copy.js"
   },
   "devDependencies": {
     "esbuild": "^0.28.0"
