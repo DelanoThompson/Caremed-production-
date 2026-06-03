@@ -1,0 +1,8 @@
+{
+  "scripts": {
+    "build": "esbuild main.js --bundle --outfile=app.bundle.js --format=iife --platform=browser --target=chrome80"
+  },
+  "devDependencies": {
+    "esbuild": "^0.28.0"
+  }
+}

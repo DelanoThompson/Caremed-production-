@@ -50,7 +50,7 @@ export function renderApp() {
     </div>
 
     <div id="build-screen"     class="screen slide-up"></div>
-    <div id="slideshow-screen" class="screen slide-up" style="display:flex;flex-direction:column;overflow:hidden"></div>
+    <div id="slideshow-screen" class="screen slide-up"></div>
     <div id="form-screen"      class="screen slide-up"></div>
     <div id="product-screen"   class="screen slide-left"></div>
 
