@@ -26,7 +26,6 @@ copyDir('css',              'dist/css')
 copyDir('icons',            'dist/icons')
 copyDir('js',               'dist/js')
 
-// Cloudflare Pages SPA redirect
-fs.writeFileSync('dist/_redirects', '/* /index.html 200\n')
+// SPA routing handled by wrangler.jsonc not_found_handling
 
 console.log('✓ dist/ ready for deployment')
