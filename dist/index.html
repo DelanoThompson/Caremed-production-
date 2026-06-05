@@ -24,11 +24,27 @@
       <span style="font-size:32px;font-weight:800;color:#fff;letter-spacing:-1px">Care</span><span style="font-size:32px;font-weight:800;color:rgba(255,255,255,.45);letter-spacing:-1px">med</span>
     </div>
     <div style="width:36px;height:36px;border:3px solid rgba(255,255,255,.2);border-top-color:#fff;border-radius:50%;animation:spin 0.8s linear infinite"></div>
+    <div id="boot-status" style="font-size:12px;color:rgba(255,255,255,.55);font-family:monospace;min-height:18px">starting…</div>
     <style>@keyframes spin{to{transform:rotate(360deg)}}</style>
   </div>
 </div>
 <div id="toast-container"></div>
 <div id="modal-container"></div>
-<script src="app.bundle.js"></script>
+<script>
+  // Visible boot tracer + error surface (DevTools is blocked on managed devices)
+  window.__boot = function(msg){ var el=document.getElementById('boot-status'); if(el) el.textContent=msg; };
+  window.addEventListener('error', function(e){
+    window.__boot('ERR: ' + (e.message || e.type));
+  });
+  window.addEventListener('unhandledrejection', function(e){
+    window.__boot('REJECT: ' + ((e.reason && e.reason.message) || e.reason));
+  });
+  window.__boot('loading supabase…');
+</script>
+<script src="js/supabase.min.js"
+  onload="window.__boot('supabase loaded')"
+  onerror="window.__boot('FAILED to load supabase.min.js')"></script>
+<script src="app.bundle.js"
+  onerror="window.__boot('FAILED to load app.bundle.js')"></script>
 </body>
 </html>

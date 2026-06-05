@@ -40,10 +40,13 @@ async function boot() {
   if (_booted) return
 
   _booted = true
+  const trace = (m) => { try { window.__boot && window.__boot(m) } catch(e){} }
   try {
+    trace('checking session…')
     const session = await withTimeout(Auth.getSession(), 6000, 'getSession')
     if (session?.user) {
       State.user = session.user
+      trace('loading profile…')
       try {
         await withTimeout(State.loadProfile(), 6000, 'loadProfile')
       } catch(e) {
@@ -55,12 +58,15 @@ async function boot() {
         renderLogin(onLoginSuccess)
         return
       }
+      trace('rendering app…')
       renderApp()
       return
     }
   } catch(e) {
+    trace('boot error: ' + (e.message || e))
     // getSession hung or failed — fall through to login so the app is usable
   }
+  trace('showing login…')
   renderLogin(onLoginSuccess)
 }
 

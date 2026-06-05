@@ -23,25 +23,29 @@
     subscribeToJobs: () => subscribeToJobs
   });
   function getClient() {
-    if (!_client) _client = createClient(SUPABASE_URL, SUPABASE_KEY, {
-      auth: {
-        persistSession: true,
-        autoRefreshToken: true,
-        detectSessionInUrl: true,
-        // No-op lock — bypasses navigator.locks, which deadlocks in Android
-        // WebView/PWA on reopen and causes the app to spin forever.
-        lock: async (_name, _acquireTimeout, fn) => await fn()
+    if (!_client) {
+      if (!window.supabase || !window.supabase.createClient) {
+        throw new Error("Supabase library not loaded");
       }
-    });
+      _client = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+        auth: {
+          persistSession: true,
+          autoRefreshToken: true,
+          detectSessionInUrl: true,
+          // No-op lock — bypasses navigator.locks, which deadlocks in Android
+          // WebView/PWA on reopen and causes the app to spin forever.
+          lock: async (_name, _acquireTimeout, fn) => await fn()
+        }
+      });
+    }
     return _client;
   }
   function subscribeToJobs(cb) {
     return getClient().channel("jobs-rt").on("postgres_changes", { event: "*", schema: "public", table: "jobs" }, cb).on("postgres_changes", { event: "*", schema: "public", table: "stage_logs" }, cb).on("postgres_changes", { event: "*", schema: "public", table: "transfer_requests" }, cb).subscribe();
   }
-  var createClient, SUPABASE_URL, SUPABASE_KEY, _client, Auth, Profiles, Products, Jobs, StageLogs, QCRecords, Transfers;
+  var SUPABASE_URL, SUPABASE_KEY, _client, Auth, Profiles, Products, Jobs, StageLogs, QCRecords, Transfers;
   var init_db = __esm({
     "lib/db.js"() {
-      ({ createClient } = window.supabase);
       SUPABASE_URL = "https://zxlvxfquzdzfukuosyky.supabase.co";
       SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp4bHZ4ZnF1emR6ZnVrdW9zeWt5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAwNjAzNzcsImV4cCI6MjA5NTYzNjM3N30.7k2BU8HbKPubUoWYwksPdryxUoGeDtmQO6x4KRX-Zo8";
       window.__SB_URL__ = SUPABASE_URL;
@@ -2565,10 +2569,18 @@ Step 2...">${(s.instructions || []).join("\n")}</textarea>
     await new Promise((r) => setTimeout(r, 100));
     if (_booted) return;
     _booted = true;
+    const trace = (m) => {
+      try {
+        window.__boot && window.__boot(m);
+      } catch (e) {
+      }
+    };
     try {
+      trace("checking session\u2026");
       const session = await withTimeout(Auth.getSession(), 6e3, "getSession");
       if (session == null ? void 0 : session.user) {
         State.user = session.user;
+        trace("loading profile\u2026");
         try {
           await withTimeout(State.loadProfile(), 6e3, "loadProfile");
         } catch (e) {
@@ -2578,11 +2590,14 @@ Step 2...">${(s.instructions || []).join("\n")}</textarea>
           renderLogin(onLoginSuccess);
           return;
         }
+        trace("rendering app\u2026");
         renderApp();
         return;
       }
     } catch (e) {
+      trace("boot error: " + (e.message || e));
     }
+    trace("showing login\u2026");
     renderLogin(onLoginSuccess);
   }
   async function onLoginSuccess() {
