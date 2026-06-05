@@ -23,7 +23,16 @@
     subscribeToJobs: () => subscribeToJobs
   });
   function getClient() {
-    if (!_client) _client = createClient(SUPABASE_URL, SUPABASE_KEY);
+    if (!_client) _client = createClient(SUPABASE_URL, SUPABASE_KEY, {
+      auth: {
+        persistSession: true,
+        autoRefreshToken: true,
+        detectSessionInUrl: true,
+        // No-op lock — bypasses navigator.locks, which deadlocks in Android
+        // WebView/PWA on reopen and causes the app to spin forever.
+        lock: async (_name, _acquireTimeout, fn) => await fn()
+      }
+    });
     return _client;
   }
   function subscribeToJobs(cb) {
@@ -2545,16 +2554,25 @@ Step 2...">${(s.instructions || []).join("\n")}</textarea>
       await State.loadProfile();
     }
   });
+  function withTimeout(promise, ms, label) {
+    return Promise.race([
+      promise,
+      new Promise((_, reject) => setTimeout(() => reject(new Error("timeout:" + label)), ms))
+    ]);
+  }
   async function boot() {
     var _a;
     await new Promise((r) => setTimeout(r, 100));
     if (_booted) return;
     _booted = true;
     try {
-      const session = await Auth.getSession();
+      const session = await withTimeout(Auth.getSession(), 6e3, "getSession");
       if (session == null ? void 0 : session.user) {
         State.user = session.user;
-        await State.loadProfile();
+        try {
+          await withTimeout(State.loadProfile(), 6e3, "loadProfile");
+        } catch (e) {
+        }
         if (((_a = State.profile) == null ? void 0 : _a.active) === false) {
           await Auth.signOut();
           renderLogin(onLoginSuccess);

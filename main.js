@@ -26,6 +26,14 @@ Auth.onAuthChange(async (event, session) => {
   }
 })
 
+// Race a promise against a timeout so boot never hangs forever
+function withTimeout(promise, ms, label) {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => setTimeout(() => reject(new Error('timeout:' + label)), ms)),
+  ])
+}
+
 async function boot() {
   // Small delay so the auth listener above can fire first if this is a recovery redirect
   await new Promise(r => setTimeout(r, 100))
@@ -33,10 +41,15 @@ async function boot() {
 
   _booted = true
   try {
-    const session = await Auth.getSession()
+    const session = await withTimeout(Auth.getSession(), 6000, 'getSession')
     if (session?.user) {
       State.user = session.user
-      await State.loadProfile()
+      try {
+        await withTimeout(State.loadProfile(), 6000, 'loadProfile')
+      } catch(e) {
+        // Profile fetch hung/failed — still let them into the app;
+        // loadProfile will retry on next refresh.
+      }
       if (State.profile?.active === false) {
         await Auth.signOut()
         renderLogin(onLoginSuccess)
@@ -45,7 +58,9 @@ async function boot() {
       renderApp()
       return
     }
-  } catch(e) {}
+  } catch(e) {
+    // getSession hung or failed — fall through to login so the app is usable
+  }
   renderLogin(onLoginSuccess)
 }
 
